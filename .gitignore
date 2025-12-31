@@ -26,3 +26,4 @@ mcp.json
 # Logs
 *.log
 .vercel
+dist/
