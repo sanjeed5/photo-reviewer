@@ -41,6 +41,7 @@ const elements = {
     modeAll: document.getElementById('mode-all'),
     modeMaybes: document.getElementById('mode-maybes'),
     modeAccepted: document.getElementById('mode-accepted'),
+    modeRejected: document.getElementById('mode-rejected'),
     folderFilter: document.getElementById('folder-filter'),
     settingsModal: document.getElementById('settings-modal'),
     targetInput: document.getElementById('target-input'),
@@ -121,6 +122,9 @@ function applyFilters() {
         case 'accepted':
             photos = filtered.filter(p => decisions[p.id] === 'accepted');
             break;
+        case 'rejected':
+            photos = filtered.filter(p => decisions[p.id] === 'rejected');
+            break;
     }
     
     currentIndex = 0;
@@ -149,6 +153,7 @@ function setupEventListeners() {
     elements.modeAll.addEventListener('click', () => setMode('all'));
     elements.modeMaybes.addEventListener('click', () => setMode('maybes'));
     elements.modeAccepted.addEventListener('click', () => setMode('accepted'));
+    elements.modeRejected.addEventListener('click', () => setMode('rejected'));
     
     elements.folderFilter.addEventListener('change', (e) => {
         currentFolder = e.target.value;
@@ -190,15 +195,31 @@ function handleKeydown(e) {
         case 'ArrowRight':
         case ' ':
             e.preventDefault();
-            decide('accepted');
+            if (currentMode === 'accepted' || currentMode === 'rejected') {
+                // Browse mode - just navigate
+                navigateNext();
+            } else {
+                decide('accepted');
+            }
             break;
         case 'ArrowLeft':
             e.preventDefault();
-            decide('rejected');
+            if (currentMode === 'accepted' || currentMode === 'rejected') {
+                // Browse mode - just navigate back
+                navigatePrev();
+            } else {
+                decide('rejected');
+            }
             break;
         case 'ArrowUp':
             e.preventDefault();
             decide('maybe');
+            break;
+        case 'ArrowDown':
+            e.preventDefault();
+            if (currentMode === 'accepted' || currentMode === 'rejected') {
+                navigateNext();
+            }
             break;
         case 'z':
             if (e.ctrlKey || e.metaKey) {
@@ -214,6 +235,7 @@ function setMode(mode) {
     elements.modeAll.classList.toggle('active', mode === 'all');
     elements.modeMaybes.classList.toggle('active', mode === 'maybes');
     elements.modeAccepted.classList.toggle('active', mode === 'accepted');
+    elements.modeRejected.classList.toggle('active', mode === 'rejected');
     applyFilters();
 }
 
@@ -222,8 +244,9 @@ function decide(status) {
     
     const photo = photos[currentIndex];
     
-    // In accepted mode, allow rejecting or demoting to maybe
+    // In browse modes, only allow changing status (not re-applying same)
     if (currentMode === 'accepted' && status === 'accepted') return;
+    if (currentMode === 'rejected' && status === 'rejected') return;
     
     history.push({
         photoId: photo.id,
@@ -326,11 +349,14 @@ function updateUI() {
             h2.textContent = '🎉 Done with this folder!';
             p.textContent = `Accepted: ${counts.accepted}/${target}. Try another folder or export.`;
         } else if (currentMode === 'maybes') {
-            h2.textContent = '✓ Maybes cleared!';
-            p.textContent = 'No more maybes in this folder.';
-        } else {
-            h2.textContent = '📷 Accepted photos';
-            p.textContent = `${counts.accepted} accepted.`;
+            h2.textContent = '✓ No maybes';
+            p.textContent = 'No maybes in this folder.';
+        } else if (currentMode === 'accepted') {
+            h2.textContent = '📷 No accepted photos';
+            p.textContent = 'Accept some photos first!';
+        } else if (currentMode === 'rejected') {
+            h2.textContent = '🗑️ No rejected photos';
+            p.textContent = 'No rejected photos in this folder.';
         }
     }
     
@@ -357,6 +383,21 @@ function updateThumbnailStrip() {
 function jumpTo(index) {
     if (index >= 0 && index < photos.length) {
         currentIndex = index;
+        updateUI();
+    }
+}
+
+// Navigate without making decisions (for browse modes)
+function navigateNext() {
+    if (currentIndex < photos.length - 1) {
+        currentIndex++;
+        updateUI();
+    }
+}
+
+function navigatePrev() {
+    if (currentIndex > 0) {
+        currentIndex--;
         updateUI();
     }
 }

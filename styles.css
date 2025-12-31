@@ -377,6 +377,11 @@ footer {
     font-size: 0.85rem;
 }
 
+.hint-browse {
+    opacity: 0.6;
+    font-size: 0.8rem;
+}
+
 kbd {
     padding: 0.2rem 0.5rem;
     background: #333;
