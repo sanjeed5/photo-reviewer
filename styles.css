@@ -451,9 +451,39 @@ kbd {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(2, 1fr);
     gap: 8px;
-    width: min(85vw, 900px);
+    width: min(90vw, 1000px);
     height: min(65vh, 600px);
     margin: 0 auto;
+}
+
+/* All portraits: single row, 4 columns - full height for tall photos */
+.photo-grid.grid-all-portrait {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr;
+    width: min(95vw, 1200px);
+    height: min(72vh, 700px);
+}
+
+/* All landscapes: 2x2 grid - wider for horizontal photos */
+.photo-grid.grid-all-landscape {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    width: min(90vw, 1000px);
+    height: min(60vh, 550px);
+}
+
+/* Mixed: mostly portraits (3+) get portrait layout, otherwise 2x2 */
+.photo-grid.grid-mostly-portrait {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr;
+    width: min(95vw, 1200px);
+    height: min(72vh, 700px);
+}
+
+/* Mixed with mostly landscapes or even split: 2x2 works fine */
+.photo-grid.grid-mixed {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
 }
 
 .grid-photo {
@@ -522,7 +552,7 @@ kbd {
     height: 100%;
     object-fit: contain;
     display: block;
-    background: #111;
+    background: #0a0a0a;
 }
 
 .photo-num {

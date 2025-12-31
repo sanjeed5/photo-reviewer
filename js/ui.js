@@ -109,6 +109,10 @@ function updateGridUI() {
     const batch = getCurrentBatch();
     const gridPhotos = document.querySelectorAll('.grid-photo');
     
+    // Track orientations to adapt grid layout
+    let loadedCount = 0;
+    const orientations = [];
+    
     gridPhotos.forEach((gridEl, i) => {
         const img = gridEl.querySelector('img');
         if (i < batch.length) {
@@ -122,9 +126,36 @@ function updateGridUI() {
                 img.dataset.retry = '0';
                 img.onerror = function() { window.retryImage(this); };
             }
+            
+            // Detect orientation when image loads
+            img.onload = function() {
+                const isPortrait = this.naturalHeight > this.naturalWidth;
+                gridEl.classList.toggle('portrait', isPortrait);
+                gridEl.classList.toggle('landscape', !isPortrait);
+                orientations[i] = isPortrait ? 'portrait' : 'landscape';
+                loadedCount++;
+                
+                // Once all images loaded, adapt grid layout
+                if (loadedCount === batch.length) {
+                    adaptGridLayout(orientations);
+                }
+            };
+            
+            // If already loaded (cached), check immediately
+            if (img.complete && img.naturalHeight > 0) {
+                const isPortrait = img.naturalHeight > img.naturalWidth;
+                gridEl.classList.toggle('portrait', isPortrait);
+                gridEl.classList.toggle('landscape', !isPortrait);
+                orientations[i] = isPortrait ? 'portrait' : 'landscape';
+                loadedCount++;
+                
+                if (loadedCount === batch.length) {
+                    adaptGridLayout(orientations);
+                }
+            }
         } else {
             gridEl.classList.add('empty');
-            gridEl.classList.remove('selected');
+            gridEl.classList.remove('selected', 'portrait', 'landscape');
         }
     });
     
@@ -133,6 +164,31 @@ function updateGridUI() {
     const batchEnd = Math.min(state.currentIndex + GRID_SIZE, state.photos.length);
     el.photoName.textContent = `Batch ${Math.floor(state.currentIndex / GRID_SIZE) + 1} (${batchStart}-${batchEnd} of ${state.photos.length})`;
     el.photoFolder.textContent = state.currentFolder || 'All Folders';
+}
+
+// Adapt grid layout based on photo orientations
+function adaptGridLayout(orientations) {
+    const grid = document.getElementById('photo-grid');
+    const portraitCount = orientations.filter(o => o === 'portrait').length;
+    const landscapeCount = orientations.filter(o => o === 'landscape').length;
+    const total = orientations.length;
+    
+    // Remove previous layout classes
+    grid.classList.remove('grid-all-portrait', 'grid-all-landscape', 'grid-mostly-portrait', 'grid-mixed');
+    
+    if (portraitCount === total) {
+        // All portraits: single row layout
+        grid.classList.add('grid-all-portrait');
+    } else if (landscapeCount === total) {
+        // All landscapes: 2x2 grid
+        grid.classList.add('grid-all-landscape');
+    } else if (portraitCount >= 3) {
+        // Mostly portraits (3 or 4): use portrait layout
+        grid.classList.add('grid-mostly-portrait');
+    } else {
+        // Mixed or mostly landscapes: 2x2 works fine
+        grid.classList.add('grid-mixed');
+    }
 }
 
 export function getCurrentBatch() {
