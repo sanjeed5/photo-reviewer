@@ -1,0 +1,25 @@
+[project]
+name = "photo-reviewer"
+version = "1.0.0"
+description = "Tinder-style photo reviewer for Google Drive folders"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Your Name", email = "you@example.com" }]
+keywords = ["google-drive", "photo-reviewer", "wedding-photos"]
+
+dependencies = [
+    "gdown>=5.2.0",
+    "loguru>=0.7.0",
+    "google-api-python-client>=2.100.0",
+    "imagehash>=4.3.0",
+    "pillow>=10.0.0",
+    "pillow-heif>=0.18.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/yourusername/photo-reviewer"
+
+[project.scripts]
+fetch-photos = "fetch_photos:main"

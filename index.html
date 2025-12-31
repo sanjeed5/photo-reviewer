@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Reviewer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+    <header>
+        <div class="stats">
+            <span class="stat accepted" title="Accepted photos">✓ <span id="accepted-count">0</span><span class="target">/<span id="target-count">300</span></span></span>
+            <span class="stat maybe" title="Maybe - review later">? <span id="maybe-count">0</span></span>
+            <span class="stat rejected" title="Rejected photos">✗ <span id="rejected-count">0</span></span>
+            <span class="stat progress" title="Review progress"><span id="reviewed-count">0</span>/<span id="total-count">0</span></span>
+        </div>
+        <div class="modes">
+            <select id="folder-filter" class="folder-select" title="Filter by folder">
+                <option value="">All Folders</option>
+            </select>
+            <button id="mode-all" class="mode-btn active">Pending</button>
+            <button id="mode-maybes" class="mode-btn">Maybes (<span id="maybes-pending">0</span>)</button>
+            <button id="mode-accepted" class="mode-btn">Accepted</button>
+        </div>
+        <div class="actions">
+            <button id="undo-btn" title="Undo (Ctrl+Z)">↩ Undo</button>
+            <button id="export-btn" title="Export results + backup">📥 Export</button>
+            <button id="import-btn" title="Import backup">📤 Import</button>
+            <button id="settings-btn" title="Settings">⚙️</button>
+        </div>
+    </header>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Settings</h3>
+            <label>
+                Target photos to select:
+                <input type="number" id="target-input" value="300" min="1" max="10000">
+            </label>
+            <div class="modal-actions">
+                <button id="settings-save">Save</button>
+                <button id="settings-cancel">Cancel</button>
+                <button id="reset-btn" class="danger">Reset All</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div id="loading" class="loading">Loading photos...</div>
+        
+        <div id="photo-container" class="photo-container hidden">
+            <img id="current-photo" src="" alt="Photo to review">
+            <div class="swipe-overlay left">✗ REJECT</div>
+            <div class="swipe-overlay right">✓ ACCEPT</div>
+            <div class="swipe-overlay up">? MAYBE</div>
+        </div>
+
+        <div id="done-message" class="done-message hidden">
+            <h2>🎉 All done!</h2>
+            <p>You've reviewed all photos.</p>
+            <button id="export-final-btn">📥 Export Selected Photos</button>
+        </div>
+
+        <div id="photo-info" class="photo-info">
+            <span id="photo-name"></span>
+            <span id="photo-folder"></span>
+        </div>
+    </main>
+
+    <footer>
+        <div id="thumbnail-strip" class="thumbnail-strip"></div>
+        <div class="keyboard-hints">
+            <kbd>←</kbd> Skip &nbsp;|&nbsp; 
+            <kbd>→</kbd> Accept &nbsp;|&nbsp; 
+            <kbd>↑</kbd> Maybe &nbsp;|&nbsp; 
+            <kbd>Ctrl+Z</kbd> Undo &nbsp;|&nbsp;
+            <kbd>Click</kbd> Zoom
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

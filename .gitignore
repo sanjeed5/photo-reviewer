@@ -1,0 +1,27 @@
+# Generated files
+photos.json
+selected_photos.txt
+selected_photos.json
+thumbnails/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Environment (keep .env.example, ignore .env)
+.env
+.env.local
+mcp.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
