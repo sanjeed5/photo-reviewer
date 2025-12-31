@@ -68,7 +68,7 @@ export function confirmGridSelection(statusForSelected) {
     });
     
     state.history.push(batchHistory);
-    if (state.history.length > 50) state.history.shift();
+    if (state.history.length > 100) state.history.shift();
     
     // Move to next batch
     state.gridSelection.clear();
@@ -111,7 +111,7 @@ function reverseSelectedInBrowseMode() {
     });
     
     state.history.push(batchHistory);
-    if (state.history.length > 50) state.history.shift();
+    if (state.history.length > 100) state.history.shift();
     
     state.gridSelection.clear();
     saveState();

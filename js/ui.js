@@ -61,7 +61,7 @@ export function updateUI() {
     
     // Progress bar
     const progressBar = document.getElementById('progress-bar');
-    const pct = Math.min(100, (counts.accepted / state.target) * 100);
+    const pct = state.target > 0 ? Math.min(100, (counts.accepted / state.target) * 100) : 0;
     progressBar.style.width = `${pct}%`;
     progressBar.style.background = counts.accepted >= state.target ? 'var(--color-accept)' : '';
     
@@ -86,12 +86,20 @@ export function updateUI() {
     updateThumbnailStrip();
 }
 
+// Helper to get best thumbnail URL (local if available, else remote)
+function getThumbnailUrl(photo, size = 400) {
+    // Prefer local thumbnail if available
+    if (photo.thumbnail_local) {
+        return photo.thumbnail_local;
+    }
+    // Fall back to remote with specified size
+    return photo.thumbnail.replace(/=w\d+/, `=w${size}`);
+}
+
 function updateSingleUI() {
     const el = getElements();
     const photo = state.photos[state.currentIndex];
-    // Use w800 for single view (balance between quality and speed)
-    // Use w400 for speed - quality is fine for review
-    const src = photo.thumbnail.replace('=w1200', '=w400').replace('=w800', '=w400').replace('=w600', '=w400');
+    const src = getThumbnailUrl(photo, 400);
     if (el.currentPhoto.src !== src) {
         el.currentPhoto.src = src;
         el.currentPhoto.dataset.retry = '0';
@@ -105,6 +113,9 @@ function updateSingleUI() {
     el.photoFolder.textContent = folder;
 }
 
+// Track current batch ID to prevent race conditions
+let currentBatchId = 0;
+
 function updateGridUI() {
     const el = getElements();
     const batch = getCurrentBatch();
@@ -114,6 +125,9 @@ function updateGridUI() {
     // Reset to default 2x2 layout while loading new batch
     grid.classList.remove('grid-all-portrait', 'grid-all-landscape', 'grid-mostly-portrait', 'grid-mixed');
     
+    // Increment batch ID to invalidate any pending callbacks from previous batches
+    const thisBatchId = ++currentBatchId;
+    
     // Track orientations to adapt grid layout
     let processedCount = 0;
     const orientations = [];
@@ -122,7 +136,8 @@ function updateGridUI() {
     // Helper to finalize layout once all images processed
     const finalizeLayout = () => {
         processedCount++;
-        if (processedCount === batchSize) {
+        // Only apply layout if this is still the current batch
+        if (processedCount === batchSize && thisBatchId === currentBatchId) {
             adaptGridLayout(orientations);
         }
     };
@@ -133,8 +148,8 @@ function updateGridUI() {
             const photo = batch[i];
             gridEl.classList.remove('empty');
             gridEl.classList.toggle('selected', state.gridSelection.has(i));
-            // Use w300 for grid - speed over quality
-            const src = photo.thumbnail.replace('=w1200', '=w300').replace('=w800', '=w300').replace('=w600', '=w300');
+            // Use local thumbnail or remote w300
+            const src = getThumbnailUrl(photo, 300);
             
             const isNewSrc = img.src !== src;
             if (isNewSrc) {
@@ -210,6 +225,9 @@ function adaptGridLayout(orientations) {
         // Mixed or mostly landscapes: 2x2 works fine
         grid.classList.add('grid-mixed');
     }
+    
+    // Preload next batch now that current batch is loaded
+    preloadAfterGrid();
 }
 
 export function getCurrentBatch() {
@@ -249,40 +267,44 @@ function updateThumbnailStrip() {
     
     const visible = state.photos.slice(startIdx, startIdx + thumbCount);
     
-    el.thumbnailStrip.innerHTML = visible.map((p, i) => {
+    // Build thumbnail strip using DOM methods to prevent XSS
+    el.thumbnailStrip.replaceChildren();
+    visible.forEach((p, i) => {
         const actualIndex = startIdx + i;
-        // Use smaller thumbnail for strip (w200 instead of w1200)
-        const src = p.thumbnail_small || p.thumbnail.replace('=w1200', '=w200');
+        const src = p.thumbnail_local || p.thumbnail.replace(/=w\d+/, '=w200');
         const isCurrent = (state.viewMode === 'single' && actualIndex === state.currentIndex) || 
                           (state.viewMode === 'grid' && actualIndex >= state.currentIndex && actualIndex < state.currentIndex + GRID_SIZE);
-        return `<img src="${src}" 
-                     class="${isCurrent ? 'current' : ''}" 
-                     alt="${actualIndex + 1}"
-                     title="${p.name.split('/').pop()}"
-                     data-index="${actualIndex}"
-                     loading="lazy"
-                     data-retry="0"
-                     onerror="retryImage(this)">`;
-    }).join('');
+        
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = isCurrent ? 'current' : '';
+        img.alt = String(actualIndex + 1);
+        img.title = p.name.split('/').pop();
+        img.dataset.index = actualIndex;
+        img.loading = 'lazy';
+        img.dataset.retry = '0';
+        img.onerror = function() { window.retryImage(this); };
+        
+        el.thumbnailStrip.appendChild(img);
+    });
 }
 
-// Retry failed images with exponential backoff
+// Retry failed images with exponential backoff (longer delays to avoid rate limits)
 window.retryImage = function(img) {
     const retries = parseInt(img.dataset.retry || '0', 10);
     const src = img.src;
     
-    console.warn(`[Image Error] Retry ${retries + 1}/3 for:`, src.substring(0, 80) + '...');
-    
-    if (retries < 3) {
+    if (retries < 5) {
         img.dataset.retry = retries + 1;
-        const delay = 1000 * Math.pow(2, retries);
-        console.log(`  → Retrying in ${delay}ms`);
+        // Longer delays: 2s, 4s, 8s, 16s, 32s
+        const delay = 2000 * Math.pow(2, retries);
+        console.warn(`[Image Error] Retry ${retries + 1}/5 in ${delay/1000}s`);
         setTimeout(() => {
             img.src = '';
             img.src = src;
         }, delay);
     } else {
-        console.error(`[Image Failed] Gave up after 3 retries:`, src);
+        console.error(`[Image Failed] Gave up after 5 retries:`, src);
         img.style.opacity = '0.3';
         img.onerror = null;
     }
@@ -350,11 +372,22 @@ export function populateFolderFilter() {
     });
     
     const sortedFolders = Array.from(folders).sort();
-    el.folderFilter.innerHTML = '<option value="">All Folders (' + state.allPhotos.length + ')</option>' +
-        sortedFolders.map(f => {
-            const count = state.allPhotos.filter(p => (p.folder || p.name.split('/').slice(0, -1).join('/') || 'root') === f).length;
-            return `<option value="${f}">${f} (${count})</option>`;
-        }).join('');
+    
+    // Build options using DOM methods to prevent XSS
+    el.folderFilter.replaceChildren();
+    
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = `All Folders (${state.allPhotos.length})`;
+    el.folderFilter.appendChild(allOption);
+    
+    sortedFolders.forEach(f => {
+        const count = state.allPhotos.filter(p => (p.folder || p.name.split('/').slice(0, -1).join('/') || 'root') === f).length;
+        const option = document.createElement('option');
+        option.value = f;
+        option.textContent = `${f} (${count})`;
+        el.folderFilter.appendChild(option);
+    });
 }
 
 // Settings modal
@@ -369,15 +402,28 @@ export function closeSettings() {
     el.settingsModal.classList.add('hidden');
 }
 
-// Preload next images
+// Preload next batch of images in background
 export function preloadNext() {
-    const count = state.viewMode === 'grid' ? GRID_SIZE * 2 : 3;
-    for (let i = 1; i <= count; i++) {
-        if (state.currentIndex + i < state.photos.length) {
+    const isGrid = state.viewMode === 'grid';
+    // In grid mode, preload next 2 batches (8 images). In single, preload next 5.
+    const start = isGrid ? state.currentIndex + GRID_SIZE : state.currentIndex + 1;
+    const count = isGrid ? GRID_SIZE * 2 : 5;
+    
+    for (let i = 0; i < count; i++) {
+        const idx = start + i;
+        if (idx < state.photos.length) {
+            const photo = state.photos[idx];
+            const src = getThumbnailUrl(photo, 300);
             const img = new Image();
-            img.src = state.photos[state.currentIndex + i].thumbnail;
+            img.src = src;
         }
     }
+}
+
+// Call preload after grid batch loads
+export function preloadAfterGrid() {
+    // Small delay to not compete with current batch loading
+    setTimeout(preloadNext, 500);
 }
 
 // Grid preview modal
@@ -389,8 +435,8 @@ export function showGridPreview(gridIndex) {
     
     const photo = state.photos[photoIndex];
     // Use larger image for preview
-    // Use w600 for preview - good balance of quality and speed
-    const src = photo.thumbnail.replace('=w300', '=w600').replace('=w400', '=w600').replace('=w200', '=w600');
+    // Use local thumbnail or remote w600 for preview
+    const src = photo.thumbnail_local || photo.thumbnail.replace(/=w\d+/, '=w600');
     
     el.gridPreviewImg.src = src;
     el.gridPreview.classList.remove('hidden');

@@ -129,8 +129,10 @@ export function getCounts() {
 function downloadFile(name, content) {
     const blob = new Blob([content], { type: 'text/plain' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    a.href = url;
     a.download = name;
     a.click();
-    URL.revokeObjectURL(a.href);
+    // Delay revoking to ensure download starts
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
