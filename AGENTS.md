@@ -12,7 +12,10 @@ A Tinder-style photo reviewer for quickly selecting photos from large collection
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `app.js` | All frontend logic - state, UI, keyboard handling |
+| `js/app.js` | Main entry point - initialization, event setup |
+| `js/state.js` | State management, localStorage, export/import |
+| `js/ui.js` | UI updates and rendering |
+| `js/controls.js` | Keyboard handling, navigation, actions |
 | `fetch_photos.py` | Fetch photo list from Google Drive API |
 | `download_selected.py` | Download accepted photos after review |
 | `photos.json` | Generated photo metadata (gitignored) |
@@ -20,7 +23,8 @@ A Tinder-style photo reviewer for quickly selecting photos from large collection
 ## Deployment
 ```bash
 # Deploy to Cloudflare Pages
-cp index.html styles.css app.js photos.json dist/
+cp index.html styles.css photos.json dist/
+cp -r js dist/
 npx wrangler pages deploy dist --project-name photo-reviewer
 ```
 
@@ -45,18 +49,28 @@ python -m http.server 8765
 ```javascript
 // localStorage: 'photoReviewerState'
 {
-  decisions: { [photoId]: 'accepted' | 'rejected' | 'maybe' },
+  decisions: { [photoId]: 'accepted' | 'rejected' },
   target: 300,
   lastUpdated: "2024-12-31T..."
 }
 ```
 
 ## Keyboard Shortcuts
-- `→` / `Space`: Accept
-- `←`: Skip/Reject  
-- `↑`: Maybe
+
+### Pending Mode (reviewing)
+- `D` / `→` / `Space`: Accept
+- `A` / `←`: Reject
+- `G`: Toggle grid mode
 - `Ctrl+Z`: Undo
-- Click thumbnail: Jump to photo
+
+### Accepted/Rejected Mode (browsing)
+- `←` / `→`: Navigate
+- `Space`: Reverse decision (accept↔reject)
+- `G`: Toggle grid mode
+
+### Grid Mode
+- `1-4`: Select photos
+- `Space`: Accept selected (pending) / Reverse selected (browse)
 
 ## Sensitive Files (gitignored)
 - `.env` - Google API key
@@ -67,13 +81,14 @@ python -m http.server 8765
 ## Common Tasks
 
 ### Add new feature to UI
-Edit `app.js` (logic) and `styles.css` (styling). No build step needed.
+Edit files in `js/` folder (logic) and `styles.css` (styling). No build step needed.
 
 ### Change photo source
 Modify `fetch_photos.py` to fetch from different source. Output must be JSON array with `id`, `name`, `thumbnail` fields.
 
 ### Deploy update
 ```bash
-cp index.html styles.css app.js photos.json dist/
+cp index.html styles.css photos.json dist/
+cp -r js dist/
 npx wrangler pages deploy dist --project-name photo-reviewer
 ```

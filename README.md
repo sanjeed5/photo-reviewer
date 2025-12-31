@@ -58,21 +58,36 @@ python -m http.server 8765
 
 ## Keyboard Shortcuts
 
+### Pending Mode (reviewing)
 | Key | Action |
 |-----|--------|
-| `→` or `Space` | Accept |
-| `←` | Skip/Reject |
-| `↑` | Maybe (review later) |
+| `D` or `→` or `Space` | Accept |
+| `A` or `←` | Reject |
+| `G` | Toggle grid mode |
 | `Ctrl+Z` | Undo |
 | `Click photo` | Zoom in/out |
 | `Click thumbnail` | Jump to that photo |
 
+### Accepted/Rejected Mode (browsing)
+| Key | Action |
+|-----|--------|
+| `←` / `→` | Navigate |
+| `Space` | Reverse decision (accept↔reject) |
+| `G` | Toggle grid mode |
+
+### Grid Mode
+| Key | Action |
+|-----|--------|
+| `1-4` | Select photos |
+| `Space` | Accept selected (pending) / Reverse selected (browse) |
+| `←` / `→` | Navigate batches |
+
 ## Workflow
 
 1. **Pick a folder** from the dropdown (or review all)
-2. **Review photos** - Accept the good ones, skip the rest
-3. **Use "Maybe"** for uncertain ones - revisit later in Maybes tab
-4. **Check "Accepted"** tab to review your selections
+2. **Review photos** - Accept the good ones, reject the rest
+3. **Check "Accepted"** tab to review your selections
+4. **Check "Rejected"** tab to rescue any you want back
 5. **Export** when done - creates backup + results file
 
 ## Modes
@@ -80,8 +95,8 @@ python -m http.server 8765
 | Mode | Purpose |
 |------|---------|
 | **Pending** | Unreviewed photos |
-| **Maybes** | Photos you marked as "maybe" - finalize these |
-| **Accepted** | Your selections - can remove or demote to maybe |
+| **Accepted** | Your selections - can reverse to rejected |
+| **Rejected** | Skipped photos - can reverse to accepted |
 
 ## After Reviewing
 
@@ -101,13 +116,17 @@ python download_selected.py photo_review_state.json ./selected_photos
 
 ```
 photo-reviewer/
+├── js/
+│   ├── app.js            # Main entry point
+│   ├── state.js          # State management, export/import
+│   ├── ui.js             # UI updates and rendering
+│   └── controls.js       # Keyboard handling, navigation
 ├── fetch_photos.py       # Fetch from Google Drive
 ├── scan_local.py         # Scan local folder
 ├── download_selected.py  # Download accepted photos
 ├── index.html            # Web UI
 ├── styles.css            # Styling
-├── app.js                # Application logic
-├── photos.json           # Generated photo list
+├── photos.json           # Generated photo list (gitignored)
 └── .env                  # Your Google API key (not committed)
 ```
 

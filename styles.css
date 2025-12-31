@@ -8,7 +8,6 @@
 :root {
     --color-accept: #22c55e;
     --color-reject: #ef4444;
-    --color-maybe: #eab308;
     --color-bg: #0f0f0f;
     --color-surface: #1a1a1a;
     --color-text: #f5f5f5;
@@ -19,9 +18,10 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--color-bg);
     color: var(--color-text);
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* Header */
@@ -46,7 +46,6 @@ header {
 
 .stat.accepted { color: var(--color-accept); }
 .stat.accepted .target { color: var(--color-text-muted); font-weight: 400; }
-.stat.maybe { color: var(--color-maybe); }
 .stat.rejected { color: var(--color-reject); }
 .stat.progress { color: var(--color-text-muted); }
 
@@ -89,12 +88,6 @@ header {
     border-color: var(--color-accept);
 }
 
-.mode-btn#mode-maybes.active {
-    background: var(--color-maybe);
-    border-color: var(--color-maybe);
-    color: black;
-}
-
 .actions {
     display: flex;
     gap: 0.5rem;
@@ -129,6 +122,8 @@ main {
     justify-content: center;
     padding: 1rem;
     position: relative;
+    overflow: hidden;
+    min-height: 0;
 }
 
 .loading, .done-message {
@@ -219,14 +214,6 @@ main {
     color: white;
 }
 
-.swipe-overlay.up {
-    top: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--color-maybe);
-    color: black;
-}
-
 /* Animation states */
 .photo-container.swiping-left img {
     transform: translateX(-100px) rotate(-10deg);
@@ -243,15 +230,6 @@ main {
 }
 
 .photo-container.swiping-right .swipe-overlay.right {
-    opacity: 1;
-}
-
-.photo-container.swiping-up img {
-    transform: translateY(-50px);
-    opacity: 0.5;
-}
-
-.photo-container.swiping-up .swipe-overlay.up {
     opacity: 1;
 }
 
@@ -465,6 +443,117 @@ kbd {
     background: var(--color-accept);
     transition: width 0.3s ease;
     z-index: 50;
+}
+
+/* 4-Image Grid */
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    width: min(85vw, 900px);
+    height: min(65vh, 600px);
+    margin: 0 auto;
+}
+
+.grid-photo {
+    position: relative;
+    border: 4px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.grid-photo:hover {
+    border-color: #555;
+}
+
+/* Grid preview modal - shown when clicking a grid photo */
+.grid-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+
+.grid-preview-overlay img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+}
+
+.grid-preview-overlay .preview-info {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.grid-preview-overlay.hidden {
+    display: none;
+}
+
+.grid-photo.selected {
+    border-color: var(--color-accept);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+}
+
+.grid-photo.empty {
+    visibility: hidden;
+}
+
+.grid-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: #111;
+}
+
+.photo-num {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.photo-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--color-accept);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.15s ease;
+}
+
+.grid-photo.selected .photo-check {
+    opacity: 1;
+    transform: scale(1);
 }
 
 /* Responsive */
