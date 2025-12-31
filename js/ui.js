@@ -90,7 +90,8 @@ function updateSingleUI() {
     const el = getElements();
     const photo = state.photos[state.currentIndex];
     // Use w800 for single view (balance between quality and speed)
-    const src = photo.thumbnail.replace('=w1200', '=w800');
+    // Use w400 for speed - quality is fine for review
+    const src = photo.thumbnail.replace('=w1200', '=w400').replace('=w800', '=w400').replace('=w600', '=w400');
     if (el.currentPhoto.src !== src) {
         el.currentPhoto.src = src;
         el.currentPhoto.dataset.retry = '0';
@@ -108,23 +109,37 @@ function updateGridUI() {
     const el = getElements();
     const batch = getCurrentBatch();
     const gridPhotos = document.querySelectorAll('.grid-photo');
+    const grid = document.getElementById('photo-grid');
+    
+    // Reset to default 2x2 layout while loading new batch
+    grid.classList.remove('grid-all-portrait', 'grid-all-landscape', 'grid-mostly-portrait', 'grid-mixed');
     
     // Track orientations to adapt grid layout
-    let loadedCount = 0;
+    let processedCount = 0;
     const orientations = [];
+    const batchSize = batch.length;
+    
+    // Helper to finalize layout once all images processed
+    const finalizeLayout = () => {
+        processedCount++;
+        if (processedCount === batchSize) {
+            adaptGridLayout(orientations);
+        }
+    };
     
     gridPhotos.forEach((gridEl, i) => {
         const img = gridEl.querySelector('img');
-        if (i < batch.length) {
+        if (i < batchSize) {
             const photo = batch[i];
             gridEl.classList.remove('empty');
             gridEl.classList.toggle('selected', state.gridSelection.has(i));
-            // Use medium size for grid (w600)
-            const src = photo.thumbnail.replace('=w1200', '=w600');
-            if (img.src !== src) {
+            // Use w300 for grid - speed over quality
+            const src = photo.thumbnail.replace('=w1200', '=w300').replace('=w800', '=w300').replace('=w600', '=w300');
+            
+            const isNewSrc = img.src !== src;
+            if (isNewSrc) {
                 img.src = src;
                 img.dataset.retry = '0';
-                img.onerror = function() { window.retryImage(this); };
             }
             
             // Detect orientation when image loads
@@ -133,25 +148,31 @@ function updateGridUI() {
                 gridEl.classList.toggle('portrait', isPortrait);
                 gridEl.classList.toggle('landscape', !isPortrait);
                 orientations[i] = isPortrait ? 'portrait' : 'landscape';
-                loadedCount++;
-                
-                // Once all images loaded, adapt grid layout
-                if (loadedCount === batch.length) {
-                    adaptGridLayout(orientations);
-                }
+                finalizeLayout();
+            };
+            
+            // Handle load failures - default to landscape
+            img.onerror = function() {
+                gridEl.classList.remove('portrait');
+                gridEl.classList.add('landscape');
+                orientations[i] = 'landscape';
+                finalizeLayout();
+                // Still retry for display
+                window.retryImage(this);
             };
             
             // If already loaded (cached), check immediately
-            if (img.complete && img.naturalHeight > 0) {
-                const isPortrait = img.naturalHeight > img.naturalWidth;
-                gridEl.classList.toggle('portrait', isPortrait);
-                gridEl.classList.toggle('landscape', !isPortrait);
-                orientations[i] = isPortrait ? 'portrait' : 'landscape';
-                loadedCount++;
-                
-                if (loadedCount === batch.length) {
-                    adaptGridLayout(orientations);
+            if (!isNewSrc && img.complete) {
+                if (img.naturalHeight > 0) {
+                    const isPortrait = img.naturalHeight > img.naturalWidth;
+                    gridEl.classList.toggle('portrait', isPortrait);
+                    gridEl.classList.toggle('landscape', !isPortrait);
+                    orientations[i] = isPortrait ? 'portrait' : 'landscape';
+                } else {
+                    // Failed load, default to landscape
+                    orientations[i] = 'landscape';
                 }
+                finalizeLayout();
             }
         } else {
             gridEl.classList.add('empty');
@@ -368,7 +389,8 @@ export function showGridPreview(gridIndex) {
     
     const photo = state.photos[photoIndex];
     // Use larger image for preview
-    const src = photo.thumbnail.replace('=w600', '=w1200').replace('=w800', '=w1200');
+    // Use w600 for preview - good balance of quality and speed
+    const src = photo.thumbnail.replace('=w300', '=w600').replace('=w400', '=w600').replace('=w200', '=w600');
     
     el.gridPreviewImg.src = src;
     el.gridPreview.classList.remove('hidden');
