@@ -18,7 +18,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
 from loguru import logger
 
@@ -157,10 +157,13 @@ def main():
     # Get folder URL from command line or use default
     if len(sys.argv) > 1:
         folder_url = sys.argv[1]
-    else:
+    elif DEFAULT_FOLDER_URL:
         folder_url = DEFAULT_FOLDER_URL
-        logger.info(f"Using default folder. To use a different folder:")
-        logger.info(f"  python fetch_photos.py <folder_url>")
+        logger.info("Using default folder URL")
+    else:
+        logger.error("Usage: python fetch_photos.py <google_drive_folder_url>")
+        logger.info("Example: python fetch_photos.py 'https://drive.google.com/drive/folders/1abc...'")
+        sys.exit(1)
     
     # Fetch photos
     photos = fetch_photos(folder_url)

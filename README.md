@@ -1,18 +1,19 @@
 # Photo Reviewer
 
-**Download photos from Google Drive at lower quality for fast local review.**
+**Download photos from Google Drive for fast local review.**
 
-Perfect for reviewing large photo collections (wedding photos, events, etc.) - download them all, flip through in your file browser, and delete what you don't want.
+Perfect for reviewing large photo collections (wedding photos, events, etc.) — download them all at reduced quality, flip through in Finder/Explorer, and delete what you don't want.
 
 ## Quick Start
 
 ```bash
-# 1. Clone and setup
+# 1. Clone and install
 git clone https://github.com/sanjeed5/photo-reviewer.git
 cd photo-reviewer
-pip install httpx loguru  # or: uv pip install httpx loguru
+pip install httpx loguru google-api-python-client
 
-# 2. Set your Google API key (get one from Google Cloud Console)
+# 2. Get a Google API key (free, 2 min setup)
+#    See instructions below, then:
 export GOOGLE_API_KEY="your-api-key"
 
 # 3. Fetch photo list from a Google Drive folder
@@ -21,67 +22,73 @@ python fetch_photos.py "https://drive.google.com/drive/folders/YOUR_FOLDER_ID"
 # 4. Download all photos
 python download_photos.py
 
-# 5. Open the folder and review!
+# 5. Open and review!
 open ./photos_to_review  # macOS
-# or: explorer photos_to_review  # Windows
 ```
 
-## Options
+## Download Options
 
 ```bash
-# Download at different quality (default: 1200px width)
-python download_photos.py --size 800    # Faster, smaller files
-python download_photos.py --size 1600   # Higher quality
+# Different quality (default: 1200px width, ~200KB per photo)
+python download_photos.py --size 800     # Faster, smaller
+python download_photos.py --size 1600    # Higher quality
 
-# Only download specific folder
+# Filter by folder name
 python download_photos.py --folder "WEDDING"
 
 # Custom output location
 python download_photos.py --output ~/Desktop/review
 
-# Faster downloads (more concurrent)
+# More concurrent downloads (default: 10)
 python download_photos.py --concurrent 20
 ```
-
-## How It Works
-
-1. **fetch_photos.py** - Uses Google Drive API to list all photos in a shared folder, saves to `photos.json`
-2. **download_photos.py** - Downloads photos from Google's thumbnail service at specified quality
-
-The downloaded photos are optimized versions (not full resolution) - perfect for reviewing and selecting, while keeping file sizes manageable.
 
 ## Getting a Google API Key
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project (or select existing)
-3. Enable the **Google Drive API**
+3. Search for and enable **Google Drive API**
 4. Go to **Credentials** → **Create Credentials** → **API Key**
-5. Copy the key and set it as `GOOGLE_API_KEY` environment variable
+5. Copy the key
 
-## Tips
-
-- **Start with a subfolder** - Test with `--folder "CAM 1"` before downloading everything
-- **Use your OS tools** - Finder/Explorer are great for quick review
-- **Keyboard shortcuts** - In macOS Preview: arrow keys to navigate, ⌘+Delete to trash
-- **Check disk space** - 1000 photos at w1200 ≈ 200-400MB
-
----
-
-## Alternative: Web-Based Review
-
-There's also a web app for Tinder-style swiping through photos:
+You can set it via environment variable or create a `.env` file:
 
 ```bash
-# Start local server
-python -m http.server 8765
+# Option 1: Environment variable
+export GOOGLE_API_KEY="your-key-here"
 
-# Open http://localhost:8765
+# Option 2: Create .env file
+echo 'GOOGLE_API_KEY=your-key-here' > .env
 ```
 
-The web app supports:
-- Keyboard shortcuts (→ accept, ← reject)
-- Grid view for faster review
-- Export selected photo list
-- Progress tracking
+## How It Works
 
-See `js/` folder for the web app code.
+1. **`fetch_photos.py`** — Uses Google Drive API to recursively list all photos in a folder. Saves metadata to `photos.json`.
+
+2. **`download_photos.py`** — Downloads photos via Google's thumbnail service at your specified size. Preserves folder structure.
+
+The downloads are optimized versions (not full resolution) — perfect for quick review while keeping files small.
+
+## Review Tips
+
+- **Keyboard shortcuts in macOS Preview**: Arrow keys to navigate, `⌘+Delete` to trash
+- **Quick Look on macOS**: Select files, press `Space` to preview
+- **Windows**: Use Photo Viewer, arrow keys to navigate
+- **Disk space**: ~200-400MB per 1000 photos at w1200
+
+## Requirements
+
+- Python 3.8+
+- `httpx` — async HTTP client for fast downloads
+- `loguru` — nice logging
+- `google-api-python-client` — for fetching photo list (optional: `gdown` as fallback)
+
+```bash
+pip install httpx loguru google-api-python-client
+# or with uv:
+uv pip install httpx loguru google-api-python-client
+```
+
+## License
+
+MIT

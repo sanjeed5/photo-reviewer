@@ -1,94 +1,94 @@
 # Agent Instructions
 
 ## Project Overview
-A Tinder-style photo reviewer for quickly selecting photos from large collections (e.g., wedding photos on Google Drive).
 
-## Architecture
-- **Frontend**: Static HTML/CSS/JS (no framework)
-- **Backend**: Python scripts for fetching/downloading
-- **Data**: `photos.json` contains photo metadata from Google Drive
-- **State**: Browser localStorage for persistence, JSON export for backup
+Download photos from Google Drive at reduced quality for fast local review. Simple 2-script workflow:
 
-## Key Files
+1. `fetch_photos.py` — Get photo list from Google Drive
+2. `download_photos.py` — Download all photos locally
+
+## Files
+
 | File | Purpose |
 |------|---------|
-| `js/app.js` | Main entry point - initialization, event setup |
-| `js/state.js` | State management, localStorage, export/import |
-| `js/ui.js` | UI updates and rendering |
-| `js/controls.js` | Keyboard handling, navigation, actions |
-| `fetch_photos.py` | Fetch photo list from Google Drive API |
-| `download_selected.py` | Download accepted photos after review |
+| `fetch_photos.py` | Fetch photo metadata from Google Drive API |
+| `download_photos.py` | Download photos locally at specified quality |
 | `photos.json` | Generated photo metadata (gitignored) |
+| `.env` | Google API key (gitignored) |
+| `.env.example` | Example environment file |
 
-## Deployment
+## Usage
+
 ```bash
-# Deploy to Cloudflare Pages
-cp index.html styles.css photos.json dist/
-cp -r js dist/
-npx wrangler pages deploy dist --project-name photo-reviewer
-```
+# Set API key
+export GOOGLE_API_KEY="..."
 
-Live: https://photo-reviewer.pages.dev
-
-## Development
-```bash
-# Fetch photos from Google Drive
+# Fetch photos from Drive folder
 python fetch_photos.py "https://drive.google.com/drive/folders/FOLDER_ID"
 
-# Start local server
-python -m http.server 8765
+# Download all photos
+python download_photos.py
+
+# Download options
+python download_photos.py --size 800          # Smaller files
+python download_photos.py --folder "WEDDING"  # Filter by folder
+python download_photos.py --concurrent 20     # Faster downloads
 ```
 
 ## Data Flow
-1. `fetch_photos.py` → creates `photos.json` with IDs, names, thumbnail URLs
-2. `app.js` loads `photos.json`, user reviews with keyboard
-3. Decisions saved to localStorage + can export to `photo_review_state.json`
-4. `download_selected.py` reads state, downloads accepted photos
 
-## State Structure
-```javascript
-// localStorage: 'photoReviewerState'
-{
-  decisions: { [photoId]: 'accepted' | 'rejected' },
-  target: 300,
-  lastUpdated: "2024-12-31T..."
-}
+```
+Google Drive folder
+        ↓
+fetch_photos.py (uses Drive API)
+        ↓
+photos.json (id, name, thumbnail URL)
+        ↓
+download_photos.py (async httpx)
+        ↓
+./photos_to_review/ (local folder with photos)
 ```
 
-## Keyboard Shortcuts
+## photos.json Format
 
-### Pending Mode (reviewing)
-- `D` / `→` / `Space`: Accept
-- `A` / `←`: Reject
-- `G`: Toggle grid mode
-- `Ctrl+Z`: Undo
+```json
+[
+  {
+    "id": "1abc...",
+    "name": "WEDDING/CAM 1/IMG_1234.JPG",
+    "thumbnail": "https://lh3.googleusercontent.com/d/1abc...=w1200"
+  }
+]
+```
 
-### Accepted/Rejected Mode (browsing)
-- `←` / `→`: Navigate
-- `Space`: Reverse decision (accept↔reject)
-- `G`: Toggle grid mode
+## Key Implementation Details
 
-### Grid Mode
-- `1-4`: Select photos
-- `Space`: Accept selected (pending) / Reverse selected (browse)
+### fetch_photos.py
+- Uses `googleapiclient` with API key (no OAuth needed for public folders)
+- Recursively traverses subfolders
+- Falls back to `gdown` if no API key (limited to 50 files/folder)
+
+### download_photos.py
+- Uses `httpx` async client for concurrent downloads
+- Semaphore limits concurrent connections (default: 10)
+- Preserves folder structure from photo names
+- Retries failed downloads with exponential backoff
+- Skips already-downloaded files
 
 ## Sensitive Files (gitignored)
-- `.env` - Google API key
-- `mcp.json` - OAuth credentials
-- `photos.json` - Contains Drive file IDs
-- `dist/` - Deploy folder
+
+- `.env` — Contains `GOOGLE_API_KEY`
+- `photos.json` — Contains Drive file IDs
+- `photos_to_review/` — Downloaded photos
+- `*.log` — Download logs
 
 ## Common Tasks
 
-### Add new feature to UI
-Edit files in `js/` folder (logic) and `styles.css` (styling). No build step needed.
+### Change default download size
+Edit `download_photos.py` line ~128: `default=1200`
 
-### Change photo source
-Modify `fetch_photos.py` to fetch from different source. Output must be JSON array with `id`, `name`, `thumbnail` fields.
+### Add new photo source
+Create a script that outputs `photos.json` in the format above. The `thumbnail` URL just needs to return an image.
 
-### Deploy update
-```bash
-cp index.html styles.css photos.json dist/
-cp -r js dist/
-npx wrangler pages deploy dist --project-name photo-reviewer
-```
+### Support private folders
+Would need OAuth2 instead of API key. See Google Drive API docs.

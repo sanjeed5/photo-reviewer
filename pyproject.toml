@@ -1,25 +1,25 @@
 [project]
 name = "photo-reviewer"
-version = "1.0.0"
-description = "Tinder-style photo reviewer for Google Drive folders"
+version = "2.0.0"
+description = "Download photos from Google Drive for fast local review"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "Your Name", email = "you@example.com" }]
-keywords = ["google-drive", "photo-reviewer", "wedding-photos"]
+keywords = ["google-drive", "photo-reviewer", "wedding-photos", "photo-download"]
 
 dependencies = [
-    "gdown>=5.2.0",
+    "httpx>=0.25.0",
     "loguru>=0.7.0",
     "google-api-python-client>=2.100.0",
-    "imagehash>=4.3.0",
-    "pillow>=10.0.0",
-    "pillow-heif>=0.18.0",
     "python-dotenv>=1.0.0",
 ]
 
+[project.optional-dependencies]
+fallback = ["gdown>=5.2.0"]  # Alternative to API key
+
 [project.urls]
-Repository = "https://github.com/yourusername/photo-reviewer"
+Repository = "https://github.com/sanjeed5/photo-reviewer"
 
 [project.scripts]
 fetch-photos = "fetch_photos:main"
+download-photos = "download_photos:main"

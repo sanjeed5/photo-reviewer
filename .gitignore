@@ -1,39 +1,28 @@
-# Generated files
+# Output data
 photos.json
-selected_photos.txt
-selected_photos.json
-thumbnails/
+photos_to_review/
+review_photos/
+accepted_photos/
+
+# Logs
+*.log
 
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 .venv/
 venv/
 
-# Environment (keep .env.example, ignore .env)
+# Environment
 .env
 .env.local
-mcp.json
 
 # IDE
 .idea/
 .vscode/
 *.swp
-*.swo
 .DS_Store
 
-# Logs
-*.log
-.vercel
-dist/
-thumbnails/
-
-# Personal review data
-accepted_photos/
-photo_review_results.txt
-photo_review_state.json
-accepted_download.log
-thumbnail_download.log
-review_photos/
-photos_to_review/
+# Legacy exports
+photo_review_*.txt
+photo_review_*.json
