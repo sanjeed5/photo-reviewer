@@ -35,3 +35,5 @@ photo_review_results.txt
 photo_review_state.json
 accepted_download.log
 thumbnail_download.log
+review_photos/
+photos_to_review/

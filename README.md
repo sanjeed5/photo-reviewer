@@ -1,149 +1,87 @@
 # Photo Reviewer
 
-A Tinder-style photo reviewer for quickly selecting the best photos from large collections. Built for reviewing wedding photos from Google Drive.
+**Download photos from Google Drive at lower quality for fast local review.**
 
-## The Story 😄
-
-> "I have 3800+ wedding photos on Google Drive. I need to pick 300. Help?"
-
-What started as a simple request turned into a journey:
-
-1. **"Just use Google Drive"** → Too slow, no tracking, manual downloads
-2. **"Let's use gdown"** → Hit 50-file limit per folder 🤦
-3. **"Google Drive API it is"** → Works! But 3800 photos to review one-by-one?
-4. **"Let's group similar photos"** → Over-engineered, groups of 200+ photos
-5. **"Forget grouping, keep it simple"** → ✨ Current solution ✨
-
-The lesson: Sometimes the simplest solution wins. A clean UI with keyboard shortcuts beats a complex ML-powered grouping system.
-
-## Features
-
-- 📁 **Folder filtering** - Focus on one folder at a time
-- ⌨️ **Keyboard shortcuts** - Fast reviewing with arrow keys
-- 👀 **Preview strip** - See upcoming photos, click to jump
-- 💾 **Auto-save** - Progress saved after every decision
-- 📤 **Export/Import** - Backup and restore your progress
-- 📥 **Download script** - Batch download your selections
+Perfect for reviewing large photo collections (wedding photos, events, etc.) - download them all, flip through in your file browser, and delete what you don't want.
 
 ## Quick Start
 
-### For Google Drive (Public Folders)
-
 ```bash
-# 1. Clone
-git clone https://github.com/YOUR_USERNAME/photo-reviewer.git
+# 1. Clone and setup
+git clone https://github.com/sanjeed5/photo-reviewer.git
 cd photo-reviewer
+pip install httpx loguru  # or: uv pip install httpx loguru
 
-# 2. Setup
-cp .env.example .env
-# Add your Google API key to .env
+# 2. Set your Google API key (get one from Google Cloud Console)
+export GOOGLE_API_KEY="your-api-key"
 
-# 3. Fetch photos
+# 3. Fetch photo list from a Google Drive folder
 python fetch_photos.py "https://drive.google.com/drive/folders/YOUR_FOLDER_ID"
 
-# 4. Start reviewing
-python -m http.server 8765
-# Open http://localhost:8765
+# 4. Download all photos
+python download_photos.py
+
+# 5. Open the folder and review!
+open ./photos_to_review  # macOS
+# or: explorer photos_to_review  # Windows
 ```
 
-### For Local Photos
+## Options
 
 ```bash
-# Scan local folder
-python scan_local.py /path/to/photos
+# Download at different quality (default: 1200px width)
+python download_photos.py --size 800    # Faster, smaller files
+python download_photos.py --size 1600   # Higher quality
 
-# Start reviewing
-python -m http.server 8765
+# Only download specific folder
+python download_photos.py --folder "WEDDING"
+
+# Custom output location
+python download_photos.py --output ~/Desktop/review
+
+# Faster downloads (more concurrent)
+python download_photos.py --concurrent 20
 ```
 
-## Keyboard Shortcuts
+## How It Works
 
-### Pending Mode (reviewing)
-| Key | Action |
-|-----|--------|
-| `D` or `→` or `Space` | Accept |
-| `A` or `←` | Reject |
-| `G` | Toggle grid mode |
-| `Ctrl+Z` | Undo |
-| `Click photo` | Zoom in/out |
-| `Click thumbnail` | Jump to that photo |
+1. **fetch_photos.py** - Uses Google Drive API to list all photos in a shared folder, saves to `photos.json`
+2. **download_photos.py** - Downloads photos from Google's thumbnail service at specified quality
 
-### Accepted/Rejected Mode (browsing)
-| Key | Action |
-|-----|--------|
-| `←` / `→` | Navigate |
-| `Space` | Reverse decision (accept↔reject) |
-| `G` | Toggle grid mode |
-
-### Grid Mode
-| Key | Action |
-|-----|--------|
-| `1-4` | Select photos |
-| `Space` | Accept selected (pending) / Reverse selected (browse) |
-| `←` / `→` | Navigate batches |
-
-## Workflow
-
-1. **Pick a folder** from the dropdown (or review all)
-2. **Review photos** - Accept the good ones, reject the rest
-3. **Check "Accepted"** tab to review your selections
-4. **Check "Rejected"** tab to rescue any you want back
-5. **Export** when done - creates backup + results file
-
-## Modes
-
-| Mode | Purpose |
-|------|---------|
-| **Pending** | Unreviewed photos |
-| **Accepted** | Your selections - can reverse to rejected |
-| **Rejected** | Skipped photos - can reverse to accepted |
-
-## After Reviewing
-
-```bash
-# Download your accepted photos
-python download_selected.py photo_review_state.json ./selected_photos
-```
-
-## Data Safety
-
-- **Auto-save**: Every decision saves to browser localStorage
-- **Export**: Creates `photo_review_state.json` - full backup of all decisions
-- **Import**: Restore progress from any backup file
-- **Tab close warning**: Browser warns before closing if you have unsaved work
-
-## Files
-
-```
-photo-reviewer/
-├── js/
-│   ├── app.js            # Main entry point
-│   ├── state.js          # State management, export/import
-│   ├── ui.js             # UI updates and rendering
-│   └── controls.js       # Keyboard handling, navigation
-├── fetch_photos.py       # Fetch from Google Drive
-├── scan_local.py         # Scan local folder
-├── download_selected.py  # Download accepted photos
-├── index.html            # Web UI
-├── styles.css            # Styling
-├── photos.json           # Generated photo list (gitignored)
-└── .env                  # Your Google API key (not committed)
-```
-
-## Requirements
-
-- Python 3.10+
-- Google API key (for Drive access)
-- Modern web browser
+The downloaded photos are optimized versions (not full resolution) - perfect for reviewing and selecting, while keeping file sizes manageable.
 
 ## Getting a Google API Key
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project (or use existing)
-3. Enable "Google Drive API"
-4. Create credentials → API Key
-5. Add to `.env`: `GOOGLE_API_KEY=your_key_here`
+2. Create a new project (or select existing)
+3. Enable the **Google Drive API**
+4. Go to **Credentials** → **Create Credentials** → **API Key**
+5. Copy the key and set it as `GOOGLE_API_KEY` environment variable
 
-## License
+## Tips
 
-MIT
+- **Start with a subfolder** - Test with `--folder "CAM 1"` before downloading everything
+- **Use your OS tools** - Finder/Explorer are great for quick review
+- **Keyboard shortcuts** - In macOS Preview: arrow keys to navigate, ⌘+Delete to trash
+- **Check disk space** - 1000 photos at w1200 ≈ 200-400MB
+
+---
+
+## Alternative: Web-Based Review
+
+There's also a web app for Tinder-style swiping through photos:
+
+```bash
+# Start local server
+python -m http.server 8765
+
+# Open http://localhost:8765
+```
+
+The web app supports:
+- Keyboard shortcuts (→ accept, ← reject)
+- Grid view for faster review
+- Export selected photo list
+- Progress tracking
+
+See `js/` folder for the web app code.
