@@ -33,7 +33,7 @@ except ImportError:
     pass  # python-dotenv not installed, will use environment variables directly
 
 # Default folder - can be overridden via command line
-DEFAULT_FOLDER_URL = "https://drive.google.com/drive/folders/19kih51w0-Wuaq80tXkDnPlQpSe2fcqJR"
+DEFAULT_FOLDER_URL = ""  # Set your Google Drive folder URL here or pass as argument
 
 
 def extract_folder_id(url_or_id: str) -> str:

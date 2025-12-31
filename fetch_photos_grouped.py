@@ -26,7 +26,7 @@ except ImportError:
 from googleapiclient.discovery import build
 
 # Configuration
-DEFAULT_FOLDER_URL = "https://drive.google.com/drive/folders/19kih51w0-Wuaq80tXkDnPlQpSe2fcqJR"
+DEFAULT_FOLDER_URL = ""  # Set your Google Drive folder URL here or pass as argument
 TIME_GAP_THRESHOLD_SECONDS = 3  # Break group if gap > 3 seconds
 MAX_GROUP_SIZE = 10  # Force break if group gets too large
 
